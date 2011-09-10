@@ -266,94 +266,105 @@ class Github_IssueSource extends Extension_IssueSource {
 		// get last sync repo
 		$last_sync_repo = $this->getParam('issues.last_repo', '');
 				
-		// get repos
-// 		$repos = DAO_GithubRepository::getAll();
+		// Get containers for this source
+		$container_links = DAO_ContainerLink::getByContext(Github_ContainerSource::ID);
 		
-		
-		if($last_sync_repo !== '' && array_key_exists($last_sync_repo, $repos))
-			$logger->info(sprintf("[Issues/Github] Starting sync from %s/%s", $repos[$last_sync_repo]['user'], $repos[$last_sync_repo]['name']));
-		
-		foreach($repos as $repo) {
-			// is the repo enabled?
-			$user = DAO_GithubUser::get($repo->user_id);
-			$repository = sprintf("%s/%s", $user->login, $repo->name);
-			if($last_sync_repo !== '' && $repo->id != $last_sync_repo) {
-				$logger->info(sprintf("[Issues/Github] Skipped repository %s!", $repository));
-				continue;
-			} elseif(!$repo->enabled) {
-				$logger->info(sprintf("[Issues/Github] Skipped repository %s since it isn't enabled!", $repository));
-				continue;
-			}
-
-			$this->setParam('issues.last_repo', '');
-			// get issues
-			$logger->info(sprintf("[Issues/Github] Syncing repository %s", $repository));
-			$sync_issues = $github->get(sprintf('repos/%s/issues', $repository), array('since' => $last_sync_time));
+		if(count($container_links)) {
 			
-			if(count($sync_issues)) {
-				foreach($sync_issues as $sync_issue) {	
-										
-					// convert times
-					$sync_issue['created_at'] = strtotime($sync_issue['created_at']);
-					$sync_issue['updated_at'] = strtotime($sync_issue['updated_at']);
-					$sync_issue['closed_at'] = strtotime($sync_issue['closed_at']);
-// 					$last_sync_time = $sync_issue['updated_at']+1;
-						
-					// [TODO] Handle worker <-> assignee
-					$fields = array(
-						DAO_Issue::TITLE => $sync_issue['title'],
-						DAO_Issue::BODY => $sync_issue['body'],
-						DAO_Issue::STATE => $sync_issue['state'],
-						DAO_Issue::CREATED_DATE => $sync_issue['created_at'],
-						DAO_Issue::UPDATED_DATE => $sync_issue['updated_at'],
-						DAO_Issue::CLOSED_DATE => $sync_issue['closed_at'],
-					);
-					
-					// does this issue exist already?
-					if(null === $issue = DAO_Issue::getByNumber(self::ID, $sync_issue['number'], $repo->id)) {
-						$id = DAO_Issue::create($fields);
-						DAO_IssueLink::create($id, self::ID, $sync_issue['number'], $repo->id);
-					} else {
-						DAO_Issue::update($issue->id, $fields);
-						$id = $issue->id;
-					}
-					
-					$logger->info(sprintf("[Issues/Github] Synced issue number: %d - %s", $sync_issue['number'], $sync_issue['title']));
-					
-					// Handle milestones
-					if(!empty($sync_issue['milestone'])) {
-						$logger->info(sprintf("[Issues/Github] Milestone set for issue %d - %s", $sync_issue['number'], $sync_issue['title']));
-						$milestone_number = $sync_issue['milestone']['number'];
-
-						// Does this milestone already exist?
-						if(null === $milestone = DAO_Milestone::getByNumber($milestone_number)) {
-							$logger->info(sprintf("[Issues/Github] syncing Milestone %d!", $milestone_number));
-							$sync_milestone = $github->get(sprintf('repos/%s/milestones/%d', $repository, $milestone_number));
-							
-							$fields = array(
-								DAO_Milestone::NUMBER => $sync_milestone['number'],
-								DAO_Milestone::NAME => $sync_milestone['title'],
-								DAO_Milestone::DESCRIPTION => $sync_milestone['description'],
-								DAO_Milestone::STATE => $sync_milestone['state'],
-								DAO_Milestone::DUE_DATE => strtotime($sync_milestone['due_on']),
-							);
-							$milestone_id = DAO_Milestone::create($fields);
-						} else {
-							$milestone_id = $milestone->id;
-						}
-						
-						DAO_Issue::update($id, array(DAO_Issue::MILESTONE_ID => $milestone_id));
-					}
+			if($last_sync_repo !== '') {
+				$last_user = DAO_GithubUser::get($container_links[$last_sync_repo]->user_id);
+				$last_repo = $container_links[$last_sync_repo]->getContainer();
+				$logger->info(sprintf("[Issues/Github] Starting sync from %s/%s", $last_user->login, $last_repo->name));
+				$this->setParam('issues.last_repo', '');
+			}
+			
+			foreach($container_links as $container_link) {
+				$repo = $container_link->getContainer();
+				
+				$user = DAO_GithubUser::get($container_link->user_id);
+				$repository = sprintf("%s/%s", $user->login, $repo->name);
+				
+				if($last_sync_repo === $repo->id) {
+					$last_sync_repo = '';
+				}
+				// Is the repo enabled?
+				if($last_sync_repo !== '' && $repo->id != $last_sync_repo) {
+					$logger->info(sprintf("[Issues/Github] Skipped repository %s!", $repository));
+					continue;
+				} elseif(!$repo->enabled) {
+					$logger->info(sprintf("[Issues/Github] Skipped repository %s since it isn't enabled!", $repository));
+					continue;
 				}
 				
-				$synced++;
-				// Check amount of issues synced
-				if($synced == $max_issues) {
-					$this->setParam('issues.last_repo', $repo_id);
-					break 2;
+				// Get issues
+				$logger->info(sprintf("[Issues/Github] Syncing repository %s", $repository));
+				$sync_issues = $github->get(sprintf('repos/%s/issues', $repository), array('since' => $last_sync_time));
+				
+				if(count($sync_issues)) {
+					foreach($sync_issues as $sync_issue) {	
+											
+						// convert times
+						$sync_issue['created_at'] = strtotime($sync_issue['created_at']);
+						$sync_issue['updated_at'] = strtotime($sync_issue['updated_at']);
+						$sync_issue['closed_at'] = strtotime($sync_issue['closed_at']);
+						$last_sync_time = $sync_issue['updated_at']+1;
+						
+						// [TODO] Handle worker <-> assignee
+						$fields = array(
+							DAO_Issue::TITLE => $sync_issue['title'],
+							DAO_Issue::BODY => $sync_issue['body'],
+							DAO_Issue::STATE => $sync_issue['state'],
+							DAO_Issue::CREATED_DATE => $sync_issue['created_at'],
+							DAO_Issue::UPDATED_DATE => $sync_issue['updated_at'],
+							DAO_Issue::CLOSED_DATE => $sync_issue['closed_at'],
+						);
+						
+						// does this issue exist already?
+						if(null === $issue = DAO_Issue::getByNumber(self::ID, $sync_issue['number'], $repo->id)) {
+							$id = DAO_Issue::create($fields);
+							DAO_IssueLink::create($id, self::ID, $sync_issue['number'], $repo->id);
+						} else {
+							DAO_Issue::update($issue->id, $fields);
+							$id = $issue->id;
+						}
+						
+						$logger->info(sprintf("[Issues/Github] Synced issue number: %d - %s", $sync_issue['number'], $sync_issue['title']));
+						
+						// Handle milestones
+						if(!empty($sync_issue['milestone'])) {
+							$logger->info(sprintf("[Issues/Github] Milestone set for issue %d - %s", $sync_issue['number'], $sync_issue['title']));
+							$milestone_number = $sync_issue['milestone']['number'];
+	
+							// Does this milestone already exist?
+							if(null === $milestone = DAO_Milestone::getByNumber($milestone_number)) {
+								$logger->info(sprintf("[Issues/Github] syncing Milestone %d!", $milestone_number));
+								$sync_milestone = $github->get(sprintf('repos/%s/milestones/%d', $repository, $milestone_number));
+								
+								$fields = array(
+									DAO_Milestone::NUMBER => $sync_milestone['number'],
+									DAO_Milestone::NAME => $sync_milestone['title'],
+									DAO_Milestone::DESCRIPTION => $sync_milestone['description'],
+									DAO_Milestone::STATE => $sync_milestone['state'],
+									DAO_Milestone::DUE_DATE => strtotime($sync_milestone['due_on']),
+								);
+								$milestone_id = DAO_Milestone::create($fields);
+							} else {
+								$milestone_id = $milestone->id;
+							}
+							
+							DAO_Issue::update($id, array(DAO_Issue::MILESTONE_ID => $milestone_id));
+						}
+					}
+					
+					$synced++;
+					// Check amount of issues synced
+					if($synced == $max_issues) {
+						$this->setParam('issues.last_repo', $repo_id);
+						break 2;
+					}
+				} else {
+					$logger->info(sprintf("[Issues/Github] No issues to sync for %s", $repository));
 				}
-			} else {
-				$logger->info(sprintf("[Issues/Github] No issues to sync for %s", $repository));
 			}
 		}
 		
