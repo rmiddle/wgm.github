@@ -1,0 +1,31 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE tmx>
+<tmx version="1.4">
+	<header datatype="winres" segtype="sentence" adminlang="en-us" srclang="en-us" o-tmf="abc" />
+	<body>
+
+		<!-- Plugin Strings -->
+
+		<tu tuid='wgm.github.common'>
+			<tuv xml:lang="en_US"><seg>Github</seg></tuv>
+		</tu>
+		
+		<!-- Users -->
+
+		<tu tuid='github_user.id'>
+			<tuv xml:lang="en_US"><seg>Id</seg></tuv>
+		</tu>
+		<tu tuid='github_user.number'>
+			<tuv xml:lang="en_US"><seg>Number</seg></tuv>
+		</tu>
+		<tu tuid='github_user.login'>
+			<tuv xml:lang="en_US"><seg>Login</seg></tuv>
+		</tu>
+		<tu tuid='github_user.name'>
+			<tuv xml:lang="en_US"><seg>Name</seg></tuv>
+		</tu>
+		<tu tuid='github_user.email'>
+			<tuv xml:lang="en_US"><seg>Email</seg></tuv>
+		</tu>
+	</body>
+</tmx>

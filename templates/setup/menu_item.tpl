@@ -1,0 +1,1 @@
+<a href="{devblocks_url}c=config&a=github{/devblocks_url}">{'wgm.github.common'|devblocks_translate}</a>

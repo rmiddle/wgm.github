@@ -1,0 +1,128 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<plugin xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:noNamespaceSchemaLocation="http://www.devblocks.com/schema/plugin.xsd">
+	<id>wgm.github</id>
+	<name>[WGM] Github Integration</name>
+	<description>This plugin provides integration with Github for issue tracking functionality.</description>
+	<author>WebGroup Media, LLC.</author>
+	<revision>1</revision>
+	<link>http://www.cerb5.com/</link>
+	<image>plugin.png</image>
+ 
+	<!-- Plugin Dependencies -->
+	
+	<dependencies>
+		<require plugin_id="wgm.issues" version="1.0.0" />
+	</dependencies>
+
+	<!-- Patches -->
+	
+	<patches>
+		<patch version="1.0.0" revision="1" file="patches/1.0.0.php" />
+	</patches>
+	
+	
+	<!-- Exported Classes -->
+	
+ 	<class_loader>
+		<file path="api/dao/github_repository.php">
+			<class name="DAO_GithubRepository" />
+			<class name="Model_GithubRepository" />
+			<class name="SearchFields_GithubRepository" />
+			<class name="View_GithubRepository" />
+		</file>
+		<file path="api/dao/github_user.php">
+			<class name="DAO_GithubUser" />
+			<class name="Model_GithubUser" />
+			<class name="SearchFields_GithubUser" />
+			<class name="View_GithubUser" />
+		</file>
+		<file path="api/App.php">
+			<class name="WgmGithub_API" />
+		</file>
+	</class_loader>
+
+	<!-- Extensions -->
+ 
+	<extensions>
+		
+		<!-- Issue Source -->
+		<extension point="source.issues.wgm">
+			<id>github.source.issues.wgm</id>
+			<name>Github Issue Source</name>
+			<class>
+				<file>api/App.php</file>
+				<name>Github_IssueSource</name>
+			</class>
+			<params>
+			</params>
+		</extension>
+		
+		<extension point="source.milestones.wgm">
+			<id>github.source.milestones.wgm</id>
+			<name>Github Milestone Source</name>
+			<class>
+				<file>api/App.php</file>
+				<name>Github_MilestoneSource</name>
+			</class>
+			<params>
+			</params>
+		</extension>
+		
+		<extension point="source.containers.wgm">
+			<id>github.source.containers.wgm</id>
+			<name>Github Container Source</name>
+			<class>
+				<file>api/App.php</file>
+				<name>Github_ContainerSource</name>
+			</class>
+			<params>
+			</params>
+		</extension>
+		
+
+		<!-- Setup Page Menu Item -->
+
+		<extension point="cerberusweb.ui.page.menu.item">
+			<id>github.setup.menu.plugins.wgm</id>
+			<name>Github Plugins Menu Item</name>
+			<class>
+				<file>api/App.php</file>
+				<name>WgmGithub_SetupPluginsMenuItem</name>
+			</class>
+			<params>
+				<param key="page_id" value="core.page.configuration" />
+				<param key="menu_id" value="core.setup.menu.plugins" />
+			</params>
+		</extension>
+		
+		<!-- Setup Page Sections -->
+		
+		<extension point="cerberusweb.ui.page.section">
+			<id>setup.github.wgm</id>
+			<name>Setup Page Github Section</name>
+			<class>
+				<file>api/App.php</file>
+				<name>WgmGithub_SetupSection</name>
+			</class>
+			<params>
+				<param key="page_id" value="core.page.configuration" />
+				<param key="uri" value="github" />
+			</params>
+		</extension>
+		
+		<!-- Controllers -->
+				
+		<extension point="devblocks.controller">
+			<id>controller.github.wgm</id>
+			<name>Github Controller</name>
+			<class>
+				<file>api/App.php</file>
+				<name>WgmGithub_Controller</name>
+			</class>
+			<params>
+				<param key="uri" value="github" />
+			</params>
+		</extension>
+		
+    </extensions> 
+</plugin>
