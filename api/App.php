@@ -495,7 +495,7 @@ class Github_ContainerSource extends Extension_ContainerSource {
 			}
 		}
 	}
-}
+};
 
 class Github_MilestoneSource extends Extension_MilestoneSource {
 	
@@ -587,7 +587,7 @@ class Github_MilestoneSource extends Extension_MilestoneSource {
 		
 		$logger->info("[Issues/Github] Total Runtime: ".number_format((microtime(true)-$runtime)*1000,2)." ms");
 	}
-}
+};
 
 class WgmGithub_API {
 	
@@ -658,45 +658,4 @@ class WgmGithub_API {
 		}
 		
 	}
-}
-
-if(class_exists('Extension_DevblocksEventAction')):
-class WgmGithub_EventActionPost extends Extension_DevblocksEventAction {
-	function render(Extension_DevblocksEvent $event, Model_TriggerEvent $trigger, $params=array(), $seq=null) {
-		$tpl = DevblocksPlatform::getTemplateService();
-		$tpl->assign('params', $params);
-		$tpl->assign('token_labels', $event->getLabels());
-		
-		if(!is_null($seq))
-			$tpl->assign('namePrefix', 'action'.$seq);
-			
-		$users = DevblocksPlatform::getPluginSetting('wgm.github', 'users', '');
-		$users = json_decode($users, TRUE);
-		
-		$tpl->assign('users', $users);
-		
-		$tpl->display('devblocks:wgm.github::events/action_update_status_github.tpl');
-	}
-	
-	function run($token, Model_TriggerEvent $trigger, $params, &$values) {
-		$github = WgmGithub_API::getInstance();
-		
-		$users = DevblocksPlatform::getPluginSetting('wgm.github', 'users');
-		$users = json_decode($users, TRUE);
-		
-		$dot = strpos($params['user'], '.');
-		$user_id = substr($params['user'], 0, $dot);
-		$page_id = substr($params['user'], $dot+1);
-		$user = $users[$user_id]['pages'][$page_id];
-
-		// Translate message tokens
-		$tpl_builder = DevblocksPlatform::getTemplateBuilder();
-		if(false !== ($content = $tpl_builder->build($params['content'], $values))) {
-			
-			$github->setCredentials($user['access_token']);
-			$github->postStatusMessage($user['id'], $content);
-			
-		}
-	}
 };
-endif;
