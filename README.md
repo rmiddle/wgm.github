@@ -9,7 +9,7 @@ This plugin is currently being developed and is offered on an experimental basis
 
 What's this?
 ------------
-This plugin provides integration with [Github](http://www.github.com/) to sync issues via their REST API into the Issues plugin. This plugin requires the [wgm.issues](http://www.github.com/cerb5-plugins/wgm.issues) plugin to work.
+This plugin provides integration with [Github](http://www.github.com/) to sync issues via their REST API into the Issues plugin. This plugin requires the [wgm.issues](http://www.github.com/cerb5-plugins/wgm.issues) plugin and the [OAuth extension](http://www.php.net/oauth) to work.
 
 Installation
 ------------
