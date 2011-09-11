@@ -519,74 +519,7 @@ class Github_MilestoneSource extends Extension_MilestoneSource {
 		// get config
 		$token = DevblocksPlatform::getPluginSetting('wgm.github', 'access_token', '');
 		$github->setCredentials($token);
-		
-		// get last sync repo
-		$last_sync_repo = $this->getParam('repos.last_repo', '');
-		
-		// max repos to sync
-		$max_repos = $this->getParam('max_repos', 100);
-		
-		// get repos
-		$repos = $github->get('user/repos');
-		
-		$synced = 0;
-		
-		if($last_sync_repo !== '' && array_key_exists($last_sync_repo, $repos))
-		$logger->info(sprintf("[Issues/Github] Starting sync from %s/%s", $repos[$last_sync_repo]['user'], $repos[$last_sync_repo]['name']));
-		
-		foreach($repos as $repo) {
-			if($last_sync_repo !== '' && $repo['id'] != $last_sync_repo) {
-				$logger->info(sprintf("[Issues/Github] Skipping repository %s!", $repository));
-				continue;
-			}
-			// does the owner of the repository exist in the DB?
-			if(null === $user = DAO_GithubUser::getByLogin($repo['owner']['login'])) {
-				$user = $github->get(sprintf('users/%s', $repo['owner']['login']));
-		
-				$fields = array(
-					DAO_GithubUser::NUMBER => $user['id'],
-					DAO_GithubUser::LOGIN => $user['login'],
-					DAO_GithubUser::NAME => $user['name'],
-					DAO_GithubUser::EMAIL => $user['email']
-				);
-				$user = DAO_GithubUser::create($fields);
-			}
-			$fields = array(
-				DAO_GithubRepository::NUMBER => $repo['id'],
-				DAO_GithubRepository::NAME => $repo['name'],
-				DAO_GithubRepository::DESCRIPTION => $repo['description'],
-				DAO_GithubRepository::USER_ID => $user->id,
-				DAO_GithubRepository::ENABLED => true
-			);
-		
-			// does the repo exist in the DB?
-			if(null === $repository = DAO_GithubRepository::getByNumber($repo['id'])) {
-				DAO_GithubRepository::create($fields);
-			} else {
-				DAO_GithubRepository::update($repository->id, $fields);
-			}
-			$synced++;
-			// check amount of repos synced
-			if($synced == $max_repos) {
-				$this->setParam('repos.last_repo', $repo_id);
-				break 2;
-					
-			}
-		}
-		foreach($repos as $repo) {
-			// is the repo enabled?
-			$user = DAO_GithubUser::get($repo->user_id);
-			$repository = sprintf("%s/%s", $user->login, $repo->name);
-			if($last_sync_repo !== '' && $repo_id != $last_sync_repo) {
-				$logger->info(sprintf("[Issues/Github] Skipping repository %s!", $repository));
-				continue;
-			} elseif(!$repo->enabled) {
-				$logger->info(sprintf("[Issues/Github] Skipping repository %s since it isn't enabled!", $repository));
-				continue;
-			}
-		
-		}
-		
+	
 		$logger->info("[Issues/Github] Total Runtime: ".number_format((microtime(true)-$runtime)*1000,2)." ms");
 	}
 };
@@ -656,7 +589,7 @@ class WgmGithub_API {
 			$this->_oauth->fetch(self::GITHUB_OAUTH_HOST . '/' . $url . '?access_token=' . $this->_access_token, $params, $method);
 			return json_decode($this->_oauth->getLastResponse(), true);
 		} catch(OAuthException $e) {
-			echo 'Exception: ' . $e->getMessage();
+// 			echo 'Exception: ' . $e->getMessage();
 		}
 		
 	}
