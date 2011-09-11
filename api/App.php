@@ -328,7 +328,7 @@ class Github_IssueSource extends Extension_IssueSource {
 							$id = $issue->id;
 						}
 						
-						$logger->info(sprintf("[Issues/Github] Synced issue number: %d - %s", $sync_issue['number'], $sync_issue['title']));
+						$logger->info(sprintf("[Issues/Github] Synced issue %d - %s", $sync_issue['number'], $sync_issue['title']));
 						
 						// Handle milestones
 						if(!empty($sync_issue['milestone'])) {
@@ -336,18 +336,19 @@ class Github_IssueSource extends Extension_IssueSource {
 							$milestone_number = $sync_issue['milestone']['number'];
 	
 							// Does this milestone already exist?
-							if(null === $milestone = DAO_Milestone::getByNumber($milestone_number)) {
-								$logger->info(sprintf("[Issues/Github] syncing Milestone %d!", $milestone_number));
+							if(null === $milestone = DAO_Milestone::getByNumber(Github_MilestoneSource::ID, $milestone_number, $repo->id)) {
 								$sync_milestone = $github->get(sprintf('repos/%s/milestones/%d', $repository, $milestone_number));
 								
 								$fields = array(
-									DAO_Milestone::NUMBER => $sync_milestone['number'],
 									DAO_Milestone::NAME => $sync_milestone['title'],
 									DAO_Milestone::DESCRIPTION => $sync_milestone['description'],
 									DAO_Milestone::STATE => $sync_milestone['state'],
+									DAO_Milestone::CREATED_DATE => strtotime($sync_milestone['created_at']),
 									DAO_Milestone::DUE_DATE => strtotime($sync_milestone['due_on']),
 								);
 								$milestone_id = DAO_Milestone::create($fields);
+								DAO_MilestoneLink::create($milestone_id, Github_MilestoneSource::ID, $milestone_number, $repo->id);
+								$logger->info(sprintf("[Issues/Github] Synced Milestone %d!", $milestone_number));
 							} else {
 								$milestone_id = $milestone->id;
 							}
@@ -498,6 +499,7 @@ class Github_ContainerSource extends Extension_ContainerSource {
 };
 
 class Github_MilestoneSource extends Extension_MilestoneSource {
+	const ID = 'github.source.milestone.wgm';
 	
 	public function sync($max_milestones, &$synced) {
 		$logger = DevblocksPlatform::getConsoleLog();

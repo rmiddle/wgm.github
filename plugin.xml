@@ -11,7 +11,7 @@
 	<!-- Plugin Dependencies -->
 	
 	<dependencies>
-		<require plugin_id="wgm.issues" version="1.0.0" />
+		<require plugin_id="wgm.issues" version="1.0.1" />
 	</dependencies>
 
 	<!-- Patches -->
